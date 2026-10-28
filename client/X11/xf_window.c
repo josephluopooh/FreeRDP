@@ -902,7 +902,7 @@ void xf_SetWindowStyle(xfContext* xfc, xfAppWindow* appWindow, UINT32 style, UIN
 		window_type = xfc->NET_WM_WINDOW_TYPE_NORMAL;
 	}
 
-	if (style & WS_POPUP)
+	if ((style & WS_POPUP) && !redirect)
 	{
 		window_type = xfc->NET_WM_WINDOW_TYPE_DIALOG;
 		/* this includes dialogs, popups, etc, that need to be full-fledged windows */
@@ -916,6 +916,7 @@ void xf_SetWindowStyle(xfContext* xfc, xfAppWindow* appWindow, UINT32 style, UIN
 			xf_SetWindowUnlisted(xfc, appWindow->handle);
 		}
 	}
+	appWindow->override_redirect = redirect;
 
 	if (!(style == 0 && ex_style == 0))
 	{
