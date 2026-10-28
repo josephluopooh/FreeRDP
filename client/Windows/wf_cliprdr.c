@@ -1873,6 +1873,15 @@ static UINT wf_cliprdr_server_capabilities(CliprdrClientContext* context,
  *
  * @return 0 on success, otherwise a Win32 error code
  */
+static UINT wf_cliprdr_send_client_format_list_response(CliprdrClientContext* context, BOOL status)
+{
+	CLIPRDR_FORMAT_LIST_RESPONSE response = WINPR_C_ARRAY_INIT;
+	response.common.msgType = CB_FORMAT_LIST_RESPONSE;
+	response.common.msgFlags = status ? CB_RESPONSE_OK : CB_RESPONSE_FAIL;
+	response.common.dataLen = 0;
+	return context->ClientFormatListResponse(context, &response);
+}
+
 static UINT wf_cliprdr_server_format_list(CliprdrClientContext* context,
                                           const CLIPRDR_FORMAT_LIST* formatList)
 {
@@ -1882,7 +1891,10 @@ static UINT wf_cliprdr_server_format_list(CliprdrClientContext* context,
 	wfClipboard* clipboard = (wfClipboard*)context->custom;
 
 	if (!clear_format_map(clipboard))
+	{
+		wf_cliprdr_send_client_format_list_response(context, FALSE);
 		return ERROR_INTERNAL_ERROR;
+	}
 
 	for (UINT32 i = 0; i < formatList->numFormats; i++)
 	{
@@ -1906,6 +1918,10 @@ static UINT wf_cliprdr_server_format_list(CliprdrClientContext* context,
 		clipboard->map_size++;
 		map_ensure_capacity(clipboard);
 	}
+
+	const UINT response = wf_cliprdr_send_client_format_list_response(context, TRUE);
+	if (response != CHANNEL_RC_OK)
+		return response;
 
 	if (file_transferring(clipboard))
 	{
